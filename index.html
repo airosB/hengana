@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>変体仮名フラッシュカード</title>
+<style>
+  :root {
+    --bg: #faf8f2;
+    --surface: #ffffff;
+    --border: #d4c8b0;
+    --text: #2c2412;
+    --muted: #7a6e5a;
+    --accent: #7b4f1a;
+    --correct: #2d7a3a;
+    --wrong: #9a2020;
+    --lv1: #4a7a20;
+    --lv2: #c47a00;
+    --lv3: #5a5a5a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  header {
+    width: 100%;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  header h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: .05em; }
+  header .sub { font-size: .8rem; color: var(--muted); }
+
+  #app { width: 100%; max-width: 640px; padding: 24px 16px; }
+
+  /* ---- Setup screen ---- */
+  .setup-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+  }
+  .setup-card h2 { font-size: 1rem; margin-bottom: 16px; }
+  .level-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .level-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .level-check:hover { background: #f5f0e8; }
+  .level-check input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+  .level-badge {
+    font-size: .72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 100px;
+    color: #fff;
+    min-width: 56px;
+    text-align: center;
+  }
+  .lv1 { background: var(--lv1); }
+  .lv2 { background: var(--lv2); }
+  .lv3 { background: var(--lv3); }
+  .level-desc { font-size: .85rem; }
+  .level-count { font-size: .75rem; color: var(--muted); margin-left: auto; }
+
+  .btn-start {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn-start:hover { opacity: .88; }
+  .btn-start:disabled { opacity: .4; cursor: default; }
+
+  .stats-row {
+    margin-top: 16px;
+    font-size: .8rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* ---- Quiz screen ---- */
+  .quiz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    font-size: .85rem;
+    color: var(--muted);
+  }
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width .3s;
+  }
+  .image-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    margin-bottom: 20px;
+    min-height: 200px;
+  }
+  .image-box img {
+    max-width: 100%;
+    max-height: 240px;
+    image-rendering: auto;
+  }
+  .image-src-hint {
+    font-size: .7rem;
+    color: #bbb;
+    text-align: center;
+    margin-top: -12px;
+    margin-bottom: 16px;
+  }
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .choice-btn {
+    padding: 13px 16px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background .1s, border-color .1s;
+    text-align: left;
+    line-height: 1.4;
+  }
+  .choice-btn:hover:not(:disabled) { background: #f5f0e8; border-color: var(--accent); }
+  .choice-btn.correct { background: #e6f5e9; border-color: var(--correct); color: var(--correct); }
+  .choice-btn.wrong   { background: #fce8e8; border-color: var(--wrong);   color: var(--wrong); }
+  .choice-btn:disabled { cursor: default; }
+  .choice-dontknow {
+    color: var(--muted);
+    border-style: dashed;
+    font-size: .9rem;
+  }
+  .choice-dontknow.wrong { color: var(--wrong); border-style: solid; }
+
+  .feedback {
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    min-height: 44px;
+  }
+  .feedback.correct { color: var(--correct); background: #e6f5e9; }
+  .feedback.wrong   { color: var(--wrong);   background: #fce8e8; }
+
+  .btn-next {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    background: var(--text);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn-next:hover { opacity: .8; }
+  .btn-unsure {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    font-size: .82rem;
+    cursor: pointer;
+    transition: background .1s, color .1s;
+  }
+  .btn-unsure:hover { background: #f5f0e8; color: var(--text); }
+
+  /* ---- Result screen ---- */
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 24px;
+    text-align: center;
+  }
+  .result-card h2 { font-size: 1.1rem; margin-bottom: 20px; }
+  .score-big {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .score-label { font-size: .85rem; color: var(--muted); margin-bottom: 24px; }
+  .wrong-list { text-align: left; margin-bottom: 24px; }
+  .wrong-list h3 { font-size: .9rem; margin-bottom: 12px; color: var(--wrong); }
+  .wrong-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: .85rem;
+  }
+  .wrong-item img { width: 48px; height: 48px; border: 1px solid var(--border); border-radius: 4px; }
+  .wrong-item .arrow { color: var(--muted); }
+  .result-btns { display: flex; flex-direction: column; gap: 10px; }
+  .btn-again {
+    padding: 13px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-again:hover { opacity: .88; }
+  .btn-back {
+    padding: 13px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: .9rem;
+    cursor: pointer;
+  }
+  .btn-back:hover { background: #f5f0e8; }
+
+  /* ---- Mode tabs ---- */
+  .mode-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .mode-tab {
+    flex: 1;
+    padding: 10px 8px;
+    background: transparent;
+    border: none;
+    font-size: .85rem;
+    cursor: pointer;
+    color: var(--muted);
+    transition: background .15s, color .15s;
+    line-height: 1.3;
+  }
+  .mode-tab + .mode-tab { border-left: 1px solid var(--border); }
+  .mode-tab.active {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+  }
+  .mode-tab:not(.active):hover { background: #f5f0e8; color: var(--text); }
+
+  /* ---- Kanji box (漢字から読みを当てるモード) ---- */
+  .kanji-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    margin-bottom: 20px;
+    min-height: 200px;
+    font-size: 7rem;
+    line-height: 1;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    color: var(--text);
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>変体仮名フラッシュカード</h1>
+  <span class="sub"><a href="http://www.book-seishindo.jp/kana/onjun_1.html" target="_blank" rel="noopener" style="color:inherit">変体仮名 五十音順一覧より</a></span>
+</header>
+<div id="app">
+  <!-- Setup -->
+  <div id="screen-setup">
+    <div class="setup-card">
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="tab-image">変体仮名を読む</button>
+        <button class="mode-tab" id="tab-kanji">漢字から読みを当てる</button>
+      </div>
+
+      <!-- 変体仮名モード -->
+      <div id="setup-image">
+        <h2>出題レベルを選択</h2>
+        <div class="level-row">
+          <label class="level-check">
+            <input type="checkbox" id="chk1" checked>
+            <span class="level-badge lv1">レベル1</span>
+            <span class="level-desc">よく使われる変体仮名</span>
+            <span class="level-count" id="cnt1">— 枚</span>
+          </label>
+          <label class="level-check">
+            <input type="checkbox" id="chk2">
+            <span class="level-badge lv2">レベル2</span>
+            <span class="level-desc">現行かなと同じ字母</span>
+            <span class="level-count" id="cnt2">— 枚</span>
+          </label>
+          <label class="level-check">
+            <input type="checkbox" id="chk3">
+            <span class="level-badge lv3">レベル3</span>
+            <span class="level-desc">その他の変体仮名</span>
+            <span class="level-count" id="cnt3">— 枚</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 漢字モード -->
+      <div id="setup-kanji" class="hidden">
+        <h2>漢字の読みを当てる</h2>
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:20px;line-height:1.6">
+          字母（変体仮名の元になった漢字）を見て、どの仮名に対応するかを答えるモードだよ。<br>
+          レベルに関わらず全字母が出題対象になるよ。
+        </p>
+      </div>
+
+      <button class="btn-start" id="btn-start">クイズを始める（10問）</button>
+      <div class="stats-row" id="stats-row">学習履歴を読み込み中…</div>
+    </div>
+  </div>
+
+  <!-- Quiz -->
+  <div id="screen-quiz" class="hidden">
+    <div class="quiz-header">
+      <span id="q-num">問題 1 / 10</span>
+      <span id="q-score">正解 0 / 0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="image-box" id="q-image-box">
+      <img id="q-img" src="" alt="">
+    </div>
+    <div class="kanji-box hidden" id="q-kanji-box"></div>
+    <div class="image-src-hint" id="q-hint"></div>
+    <div class="choices" id="choices"></div>
+    <div class="feedback hidden" id="feedback"></div>
+    <button class="btn-unsure hidden" id="btn-unsure">自信なかったので正解として記録しない</button>
+    <button class="btn-next hidden" id="btn-next">次の問題 →</button>
+  </div>
+
+  <!-- Result -->
+  <div id="screen-result" class="hidden">
+    <div class="result-card">
+      <h2>セッション結果</h2>
+      <div class="score-big" id="result-score">0 / 10</div>
+      <div class="score-label" id="result-pct">正答率 0%</div>
+      <div class="wrong-list hidden" id="wrong-list">
+        <h3>間違えた問題</h3>
+        <div id="wrong-items"></div>
+      </div>
+      <div class="result-btns">
+        <button class="btn-again" id="btn-again">もう一度</button>
+        <button class="btn-back" id="btn-back">設定画面に戻る</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+// ---- Data ----
+// CARDS は data.js で定義: [{src, kana, kanji, level}, ...]
+// 画像パスは images/ 以下
+
+const STORAGE_KEY = "hentaigana_scores";
+const QUIZ_LEN = 10;
+
+// 漢字モード用: ユニークな (kanji, kana) ペア
+const KANJI_CARDS = (() => {
+  const seen = new Set();
+  const result = [];
+  for (const c of CARDS) {
+    const key = `${c.kanji}:${c.kana}`;
+    if (!seen.has(key)) { seen.add(key); result.push({ kanji: c.kanji, kana: c.kana }); }
+  }
+  return result;
+})();
+
+// データ中に登場する全仮名（選択肢用）
+const ALL_KANA = [...new Set(CARDS.map(c => c.kana))].sort();
+
+function loadScores() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+  catch { return {}; }
+}
+function saveScores(scores) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+}
+
+// 答え表示用テキスト
+function answerText(card) {
+  return card.kanji ? `${card.kana}（${card.kanji}）` : card.kana;
+}
+
+// 重み付きランダム選択（同じカードを選ばない）
+function weightedPick(pool, scores, exclude) {
+  const eligible = pool.filter(c => !exclude.has(c.src));
+  if (!eligible.length) return null;
+  const weights = eligible.map(c => {
+    const s = scores[c.src];
+    if (!s) return 10;
+    if (s.total === 0) return 10;
+    const rate = s.correct / s.total;
+    if (rate === 0) return 8;
+    if (rate < 0.5) return 5;
+    if (rate < 0.75) return 3;
+    return 1;
+  });
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < eligible.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return eligible[i];
+  }
+  return eligible[eligible.length - 1];
+}
+
+// 間違い選択肢を4つ選ぶ（kana+kanji がcorrectと異なるもの）
+function pickWrongChoices(correct, allCards, n) {
+  const correctKey = `${correct.kana}${correct.kanji}`;
+  // 同じkana+kanaペアのユニーク候補
+  const pool = [];
+  const seen = new Set([correctKey]);
+  for (const c of allCards) {
+    const key = `${c.kana}${c.kanji}`;
+    if (!seen.has(key)) { seen.add(key); pool.push(c); }
+  }
+  // shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, n);
+}
+
+// ---- State ----
+let currentMode = "image";   // "image" | "kanji"
+let selectedLevels = new Set([1]);
+let pool = [];
+let quiz = [];      // [{card, correct (bool)}]
+let current = 0;
+let answered = false;
+
+// ---- UI helpers ----
+function showScreen(id) {
+  ["screen-setup","screen-quiz","screen-result"].forEach(s => {
+    document.getElementById(s).classList.toggle("hidden", s !== id);
+  });
+}
+
+function updateSetupStats() {
+  const scores = loadScores();
+  if (currentMode === "image") {
+    [1,2,3].forEach(lv => {
+      const cards = CARDS.filter(c => c.level === lv);
+      document.getElementById(`cnt${lv}`).textContent = `${cards.length} 枚`;
+    });
+    const sel = CARDS.filter(c => selectedLevels.has(c.level));
+    const learned = sel.filter(c => scores[c.src]?.correct > 0).length;
+    const perfect = sel.filter(c => {
+      const s = scores[c.src];
+      return s && s.total > 0 && s.correct / s.total >= 1;
+    }).length;
+    document.getElementById("stats-row").textContent =
+      sel.length
+        ? `出題対象 ${sel.length} 枚 ／ 正解経験あり ${learned} 枚 ／ 全問正解 ${perfect} 枚`
+        : "対象なし";
+    document.getElementById("btn-start").disabled = sel.length < 5;
+  } else {
+    const learned = KANJI_CARDS.filter(c => scores[`kanji:${c.kanji}`]?.correct > 0).length;
+    const perfect = KANJI_CARDS.filter(c => {
+      const s = scores[`kanji:${c.kanji}`];
+      return s && s.total > 0 && s.correct / s.total >= 1;
+    }).length;
+    document.getElementById("stats-row").textContent =
+      `出題対象 ${KANJI_CARDS.length} 字 ／ 正解経験あり ${learned} 字 ／ 全問正解 ${perfect} 字`;
+    document.getElementById("btn-start").disabled = false;
+  }
+}
+
+function buildQuiz() {
+  const scores = loadScores();
+  const used = new Set();
+  quiz = [];
+  if (currentMode === "image") {
+    pool = CARDS.filter(c => selectedLevels.has(c.level));
+    for (let i = 0; i < QUIZ_LEN; i++) {
+      const card = weightedPick(pool, scores, used);
+      if (!card) break;
+      used.add(card.src);
+      quiz.push({ card, correct: null });
+    }
+  } else {
+    // 漢字モード: KANJI_CARDSから重み付き選択（scoreキーは kanji:安）
+    pool = KANJI_CARDS;
+    const weightedPickKanji = (exclude) => {
+      const eligible = pool.filter(c => !exclude.has(c.kanji));
+      if (!eligible.length) return null;
+      const weights = eligible.map(c => {
+        const s = scores[`kanji:${c.kanji}`];
+        if (!s) return 10;
+        if (s.total === 0) return 10;
+        const rate = s.correct / s.total;
+        if (rate === 0) return 8;
+        if (rate < 0.5) return 5;
+        if (rate < 0.75) return 3;
+        return 1;
+      });
+      const total = weights.reduce((a, b) => a + b, 0);
+      let r = Math.random() * total;
+      for (let i = 0; i < eligible.length; i++) {
+        r -= weights[i];
+        if (r <= 0) return eligible[i];
+      }
+      return eligible[eligible.length - 1];
+    };
+    for (let i = 0; i < QUIZ_LEN; i++) {
+      const card = weightedPickKanji(used);
+      if (!card) break;
+      used.add(card.kanji);
+      quiz.push({ card, correct: null });
+    }
+  }
+}
+
+function renderQuestion() {
+  const q = quiz[current];
+
+  document.getElementById("q-num").textContent = `問題 ${current + 1} / ${quiz.length}`;
+  const doneCount = quiz.slice(0, current).filter(q => q.correct !== null).length;
+  const correctCount = quiz.slice(0, current).filter(q => q.correct === true).length;
+  document.getElementById("q-score").textContent = `正解 ${correctCount} / ${doneCount}`;
+  document.getElementById("progress-fill").style.width = `${(current / quiz.length) * 100}%`;
+  document.getElementById("q-hint").textContent = "";
+  document.getElementById("feedback").className = "feedback hidden";
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("btn-unsure").classList.add("hidden");
+  document.getElementById("btn-next").classList.add("hidden");
+  answered = false;
+
+  const choicesEl = document.getElementById("choices");
+  choicesEl.innerHTML = "";
+
+  if (currentMode === "image") {
+    document.getElementById("q-image-box").classList.remove("hidden");
+    document.getElementById("q-kanji-box").classList.add("hidden");
+    document.getElementById("q-img").src = `images/${q.card.src}`;
+    document.getElementById("q-img").alt = `${q.card.kana}${q.card.kanji}`;
+
+    const wrongs = pickWrongChoices(q.card, CARDS, 4);
+    const choices = [q.card, ...wrongs];
+    for (let i = choices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [choices[i], choices[j]] = [choices[j], choices[i]];
+    }
+    choices.forEach(c => {
+      const btn = document.createElement("button");
+      btn.className = "choice-btn";
+      btn.textContent = answerText(c);
+      btn.dataset.kana = c.kana;
+      btn.dataset.kanji = c.kanji;
+      btn.addEventListener("click", () => onChoose(c, q.card, btn));
+      choicesEl.appendChild(btn);
+    });
+
+  } else {
+    document.getElementById("q-image-box").classList.add("hidden");
+    document.getElementById("q-kanji-box").classList.remove("hidden");
+    document.getElementById("q-kanji-box").textContent = q.card.kanji;
+
+    // 誤答: 正解以外のkanaをALL_KANAから4つ選ぶ
+    const wrongKana = ALL_KANA.filter(k => k !== q.card.kana);
+    for (let i = wrongKana.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [wrongKana[i], wrongKana[j]] = [wrongKana[j], wrongKana[i]];
+    }
+    const kanaChoices = [q.card.kana, ...wrongKana.slice(0, 4)];
+    for (let i = kanaChoices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [kanaChoices[i], kanaChoices[j]] = [kanaChoices[j], kanaChoices[i]];
+    }
+    kanaChoices.forEach(kana => {
+      const btn = document.createElement("button");
+      btn.className = "choice-btn";
+      btn.textContent = kana;
+      btn.dataset.kana = kana;
+      btn.dataset.kanji = "";
+      btn.addEventListener("click", () => onChoose({ kana, kanji: "" }, q.card, btn));
+      choicesEl.appendChild(btn);
+    });
+  }
+
+  // 「わからない」ボタン（不正解扱い）
+  const dkBtn = document.createElement("button");
+  dkBtn.className = "choice-btn choice-dontknow";
+  dkBtn.textContent = "わからない";
+  dkBtn.addEventListener("click", () => onChoose(null, q.card, dkBtn));
+  choicesEl.appendChild(dkBtn);
+}
+
+function onChoose(chosen, correct, btn) {
+  if (answered) return;
+  answered = true;
+
+  const isCorrect = currentMode === "image"
+    ? chosen !== null && chosen.kana === correct.kana && chosen.kanji === correct.kanji
+    : chosen !== null && chosen.kana === correct.kana;
+  quiz[current].correct = isCorrect;
+
+  // スコア更新
+  const scores = loadScores();
+  const scoreKey = currentMode === "image" ? correct.src : `kanji:${correct.kanji}`;
+  if (!scores[scoreKey]) scores[scoreKey] = { correct: 0, total: 0 };
+  scores[scoreKey].total++;
+  if (isCorrect) scores[scoreKey].correct++;
+  saveScores(scores);
+
+  // ボタンの色付け
+  document.querySelectorAll(".choice-btn").forEach(b => {
+    b.disabled = true;
+    const isCorrectBtn = currentMode === "image"
+      ? b.dataset.kana === correct.kana && b.dataset.kanji === correct.kanji
+      : b.dataset.kana === correct.kana && !b.classList.contains("choice-dontknow");
+    if (isCorrectBtn) {
+      b.classList.add("correct");
+    } else if (b === btn && !isCorrect) {
+      b.classList.add("wrong");
+    }
+  });
+
+  const fb = document.getElementById("feedback");
+  if (isCorrect) {
+    fb.textContent = "正解！";
+    fb.className = "feedback correct";
+    // 正解時のみ「自信なかった」ボタンを表示
+    const unsureBtn = document.getElementById("btn-unsure");
+    unsureBtn.classList.remove("hidden");
+    unsureBtn.onclick = () => {
+      // correct数を1戻す
+      const sc = loadScores();
+      if (sc[scoreKey] && sc[scoreKey].correct > 0) sc[scoreKey].correct--;
+      saveScores(sc);
+      // セッション内でも不正解扱いに
+      quiz[current].correct = false;
+      fb.textContent = "記録しませんでした";
+      fb.className = "feedback";
+      fb.style.cssText = "color:var(--muted);background:#f5f0e8";
+      unsureBtn.classList.add("hidden");
+    };
+  } else {
+    const correctText = currentMode === "image" ? answerText(correct) : correct.kana;
+    fb.textContent = `不正解。正解は「${correctText}」`;
+    fb.className = "feedback wrong";
+    if (currentMode === "image") document.getElementById("q-hint").textContent = `出典: ${correct.src}`;
+  }
+  fb.classList.remove("hidden");
+  document.getElementById("btn-next").classList.remove("hidden");
+}
+
+function showResult() {
+  const correctCount = quiz.filter(q => q.correct === true).length;
+  const total = quiz.length;
+  const pct = Math.round(correctCount / total * 100);
+
+  document.getElementById("result-score").textContent = `${correctCount} / ${total}`;
+  document.getElementById("result-pct").textContent = `正答率 ${pct}%`;
+
+  const wrongs = quiz.filter(q => q.correct === false);
+  const wrongList = document.getElementById("wrong-list");
+  if (wrongs.length > 0) {
+    wrongList.classList.remove("hidden");
+    document.getElementById("wrong-items").innerHTML = wrongs.map(q =>
+      currentMode === "image"
+        ? `<div class="wrong-item">
+            <img src="images/${q.card.src}" alt="">
+            <span class="arrow">→</span>
+            <span>${answerText(q.card)}</span>
+          </div>`
+        : `<div class="wrong-item">
+            <span style="font-size:1.6rem;font-family:'Hiragino Mincho ProN','Yu Mincho',serif;min-width:48px;text-align:center">${q.card.kanji}</span>
+            <span class="arrow">→</span>
+            <span>${q.card.kana}</span>
+          </div>`
+    ).join("");
+  } else {
+    wrongList.classList.add("hidden");
+  }
+
+  showScreen("screen-result");
+}
+
+// ---- Events ----
+function switchMode(mode) {
+  currentMode = mode;
+  document.getElementById("tab-image").classList.toggle("active", mode === "image");
+  document.getElementById("tab-kanji").classList.toggle("active", mode === "kanji");
+  document.getElementById("setup-image").classList.toggle("hidden", mode !== "image");
+  document.getElementById("setup-kanji").classList.toggle("hidden", mode !== "kanji");
+  updateSetupStats();
+}
+document.getElementById("tab-image").addEventListener("click", () => switchMode("image"));
+document.getElementById("tab-kanji").addEventListener("click", () => switchMode("kanji"));
+
+[1,2,3].forEach(lv => {
+  document.getElementById(`chk${lv}`).addEventListener("change", e => {
+    if (e.target.checked) selectedLevels.add(lv);
+    else selectedLevels.delete(lv);
+    updateSetupStats();
+  });
+});
+
+document.getElementById("btn-start").addEventListener("click", () => {
+  buildQuiz();
+  current = 0;
+  showScreen("screen-quiz");
+  renderQuestion();
+});
+
+document.getElementById("btn-next").addEventListener("click", () => {
+  current++;
+  if (current >= quiz.length) {
+    showResult();
+  } else {
+    renderQuestion();
+  }
+});
+
+document.getElementById("btn-again").addEventListener("click", () => {
+  buildQuiz();
+  current = 0;
+  showScreen("screen-quiz");
+  renderQuestion();
+});
+
+document.getElementById("btn-back").addEventListener("click", () => {
+  showScreen("screen-setup");
+  updateSetupStats();
+});
+
+// ---- Init ----
+if (typeof CARDS === "undefined" || !CARDS.length) {
+  document.getElementById("screen-setup").innerHTML = `
+    <div class="setup-card">
+      <h2>データが読み込めませんでした</h2>
+      <p style="color:var(--muted);font-size:.9rem;margin-top:8px">
+        fetch_data.py を実行して data.js を生成してください。
+      </p>
+    </div>`;
+} else {
+  updateSetupStats();
+}
+</script>
+</body>
+</html>
