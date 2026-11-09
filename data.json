@@ -776,7 +776,7 @@
   {
     "src": "glyph_1k/13ku_gutai2_nk.jpg",
     "kana": "く",
-    "kanji": "具\"",
+    "kanji": "具",
     "level": 1
   },
   {
@@ -2780,7 +2780,7 @@
   {
     "src": "glyph_5h/53hu_kaze_st.jpg",
     "kana": "ふ",
-    "kanji": "風\"",
+    "kanji": "風",
     "level": 3
   },
   {
@@ -4167,12 +4167,6 @@
     "src": "glyph_9w/91wa_ou2_st.jpg",
     "kana": "わ",
     "kanji": "王",
-    "level": 1
-  },
-  {
-    "src": "glyph_9w/91wa_maruwa_st.jpg",
-    "kana": "わ",
-    "kanji": "○",
     "level": 1
   },
   {

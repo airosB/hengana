@@ -57,6 +57,8 @@ class HentaiganaParser(HTMLParser):
             if src.endswith(".jpg") and alt and len(alt) >= 1 and 'ぁ' <= alt[0] <= 'ゖ':
                 kana = alt[0]
                 kanji = alt[1:].strip() if len(alt) > 1 else ""
+                # HTMLの不正なクォートなど非CJK文字を除去（基本CJK + 互換漢字）
+                kanji = re.sub(r'[^　-鿿豈-﫿]', '', kanji)
                 if kanji and self._current_level is not None:
                     self.entries.append({
                         "src": src,
