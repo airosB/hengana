@@ -2192,8 +2192,11 @@
   {
     "src": "glyph_4n/42ni_ji_nk.jpg",
     "kana": "に",
-    "kanji": "爾尓",
-    "level": 1
+    "kanji": "爾",
+    "level": 1,
+    "extra_kanji": [
+      "尓"
+    ]
   },
   {
     "src": "glyph_4n/42ni_tanba_koi.jpg",

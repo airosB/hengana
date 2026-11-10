@@ -59,13 +59,14 @@ class HentaiganaParser(HTMLParser):
                 kanji = alt[1:].strip() if len(alt) > 1 else ""
                 # HTMLの不正なクォートなど非CJK文字を除去（基本CJK + 互換漢字）
                 kanji = re.sub(r'[^　-鿿豈-﫿]', '', kanji)
+                # 複数文字は異体字の併記。先頭1文字を主、残りをextra_kanjiとして保持
+                extra = list(kanji[1:]) if len(kanji) > 1 else []
+                kanji = kanji[:1] if kanji else ""
                 if kanji and self._current_level is not None:
-                    self.entries.append({
-                        "src": src,
-                        "kana": kana,
-                        "kanji": kanji,
-                        "level": self._current_level,
-                    })
+                    entry = {"src": src, "kana": kana, "kanji": kanji, "level": self._current_level}
+                    if extra:
+                        entry["extra_kanji"] = extra
+                    self.entries.append(entry)
 
     def handle_endtag(self, tag):
         if tag == "span" and self._in_kanji_span:
@@ -147,11 +148,12 @@ def main():
         json.dump(unique, f, ensure_ascii=False, indent=2)
     print(f"Saved {out_path}")
 
-    # data.js 生成（file:// で直接開くための埋め込み用）
+    # data.js 生成（file:// で直接開くための埋め込み用、1エントリ1行）
     js_path = os.path.join(os.path.dirname(__file__), "data.js")
     with open(js_path, "w", encoding="utf-8") as f:
         f.write("// 変体仮名カードデータ（fetch_data.py により自動生成）\n")
-        f.write("const CARDS = " + json.dumps(unique, ensure_ascii=False, separators=(",", ":")) + ";\n")
+        lines = [json.dumps(e, ensure_ascii=False, separators=(",", ":")) for e in unique]
+        f.write("const CARDS = [\n" + ",\n".join(lines) + "\n];\n")
     print(f"Saved {js_path}")
 
 

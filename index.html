@@ -419,13 +419,17 @@
 const STORAGE_KEY = "hentaigana_scores";
 const QUIZ_LEN = 10;
 
-// 漢字モード用: ユニークな (kanji, kana) ペア
+// 漢字モード用: ユニークな (kanji, kana) ペア（extra_kanji も含む）
 const KANJI_CARDS = (() => {
   const seen = new Set();
   const result = [];
+  const add = (kanji, kana) => {
+    const key = `${kanji}:${kana}`;
+    if (!seen.has(key)) { seen.add(key); result.push({ kanji, kana }); }
+  };
   for (const c of CARDS) {
-    const key = `${c.kanji}:${c.kana}`;
-    if (!seen.has(key)) { seen.add(key); result.push({ kanji: c.kanji, kana: c.kana }); }
+    add(c.kanji, c.kana);
+    for (const k of (c.extra_kanji || [])) add(k, c.kana);
   }
   return result;
 })();
