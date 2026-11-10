@@ -149,27 +149,32 @@
     font-size: .7rem;
     color: #bbb;
     text-align: center;
-    margin-top: -12px;
-    margin-bottom: 16px;
+    margin-top: 12px;
+    margin-bottom: 0px;
   }
   .choices {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
     margin-bottom: 20px;
   }
   .choice-btn {
-    padding: 13px 16px;
+    aspect-ratio: 1.618;
+    padding: 8px;
     border: 2px solid var(--border);
-    border-radius: 8px;
+    border-radius: 10px;
     background: var(--surface);
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-family: "A-OTF 教科書ICA Pro", sans-serif;
     font-weight: bold;
     cursor: pointer;
     transition: background .1s, border-color .1s;
-    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     line-height: 1.4;
+    word-break: break-all;
   }
   .choice-btn:hover:not(:disabled) { background: #f5f0e8; border-color: var(--accent); }
   .choice-btn.correct { background: #e6f5e9; border-color: var(--correct); color: var(--correct); }
@@ -395,11 +400,11 @@
       <img id="q-img" src="" alt="">
     </div>
     <div class="kanji-box hidden" id="q-kanji-box"></div>
-    <div class="image-src-hint" id="q-hint"></div>
     <div class="choices" id="choices"></div>
     <div class="feedback hidden" id="feedback"></div>
     <button class="btn-unsure hidden" id="btn-unsure">自信なかったので正解として記録しない</button>
     <button class="btn-next hidden" id="btn-next">次の問題 →</button>
+    <div class="image-src-hint" id="q-hint"></div>
   </div>
 
   <!-- Result -->
