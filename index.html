@@ -536,7 +536,7 @@ function updateSetupStats() {
     }).length;
     document.getElementById("stats-row").textContent =
       sel.length
-        ? `出題対象 ${sel.length} 枚 ／ 正解経験あり ${learned} 枚 ／ 全問正解 ${perfect} 枚`
+        ? `出題対象 ${sel.length} 枚 ／ 正解経験あり ${learned} 枚 ／ ノーミス ${perfect} 枚`
         : "対象なし";
     document.getElementById("btn-start").disabled = sel.length < 5;
   } else {
@@ -546,7 +546,7 @@ function updateSetupStats() {
       return s && s.total > 0 && s.correct / s.total >= 1;
     }).length;
     document.getElementById("stats-row").textContent =
-      `出題対象 ${KANJI_CARDS.length} 字 ／ 正解経験あり ${learned} 字 ／ 全問正解 ${perfect} 字`;
+      `出題対象 ${KANJI_CARDS.length} 字 ／ 正解経験あり ${learned} 字 ／ ノーミス ${perfect} 字`;
     document.getElementById("btn-start").disabled = false;
   }
 }
